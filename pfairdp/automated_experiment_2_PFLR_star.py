@@ -1,12 +1,11 @@
 # Common imports
-import numpy as np
 import os
 import torch
 from datetime import datetime
 
 # Imports from workspace
-from utils import append_row_to_csv, get_device, convert_acc_for_csv, log_configuration, write_dataset_to_file
-from data_load import load_ADULT_from_AIF, preprocess_adult_paper_based
+from utils import append_row_to_csv, get_device, convert_acc_for_csv, log_configuration
+from data_load import load_ADULT_from_AIF
 from pipeline import run_pipeline
 from models import EquivalentLogisticRegression
 

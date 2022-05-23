@@ -1,13 +1,11 @@
 # Common imports
-import numpy as np
 import os
 import torch
 from datetime import datetime
 
 # Imports from workspace
-from hyperparameter_mesh import generate_grid_hyperparameters_instances, generate_random_hyperparameter_instances
-from utils import append_row_to_csv, get_device, convert_acc_for_csv, log_configuration, write_dataset_to_file
-from data_load import load_ADULT_from_AIF, preprocess_adult_paper_based
+from utils import append_row_to_csv, get_device, convert_acc_for_csv, log_configuration
+from data_load import load_ADULT_from_AIF
 from pipeline import run_pipeline
 from models import EquivalentLogisticRegression
 
@@ -56,7 +54,7 @@ def main():
         for _ in range(20):
             params_iteration = {}
 
-            params_iteration['learning_rate'] = 1e-3 # TODO: Perhaps decrease this?
+            params_iteration['learning_rate'] = 1e-3
 
             acc_params = {}
             acc_params['number_of_epochs'] = 100

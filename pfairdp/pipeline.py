@@ -3,7 +3,7 @@ import numpy as np
 from opacus import PrivacyEngine
 
 from trainer import train, test
-from utils import to_data_loader, write_dataset_to_file, write_to_log_file, log_exception, get_device, get_data_loader_from_binary_label_dataset
+from utils import to_data_loader, write_to_log_file, get_device, get_data_loader_from_binary_label_dataset
 
 from fairness_preprocessing import fairness_preprocessing_dir, no_preprocessing
 from fairness_postprocessing import reject_option_classification
@@ -23,13 +23,7 @@ def run_pipeline(
             log_file,
             device = get_device()):
             
-    write_to_log_file(log_file, f'\n\nAccuracy params: {str(acc_params)} \n')
-    write_to_log_file(log_file, f'Fairness preprocessing params: {str(fairness_preprocessing_params)} \n')
-    write_to_log_file(log_file, f'DP params: {str(dp_params)} \n\n')
-
-    write_to_log_file(log_file, f'\n\n Size of the training set {str(train_binary_label_dataset.convert_to_dataframe()[0].shape)}\n\n')
-    write_to_log_file(log_file, f'\n\n Size of the test set {str(test_binary_label_dataset.convert_to_dataframe()[0].shape)}\n\n')
-
+    # Implementation of the fairness module
     if not bool(fairness_preprocessing_params):
         write_to_log_file(log_file, '\n*** No fairness preprocessing ***\n')
         (X_tr, X_te, y_tr, y_te, preprocessed_train_binary_label_dataset, preprocessed_test_binary_label_dataset) = no_preprocessing(sensitive_attribute, train_binary_label_dataset, test_binary_label_dataset)
@@ -46,6 +40,7 @@ def run_pipeline(
 
     (train_data_loader, test_data_loader) = to_data_loader(X_tr, X_te, y_tr, y_te, batch_size)
 
+    # Implementation of the DP module
     privacy_engine = PrivacyEngine(accountant = 'gdp')
     if not bool(dp_params):
       write_to_log_file(log_file, '\n*** DP disabeld ***\n')
@@ -77,7 +72,7 @@ def run_pipeline(
             noise_multiplier = dp_params['noise_multiplier']
         )
 
-    # Train the model
+    # Implementation of the training module
     for epoch in range(1, acc_params['number_of_epochs'] + 1):
         train(model, loss_funct, train_data_loader, optimizer, epoch, verbose = True, device = device, log_file = log_file)
         test_loss_per_epoch, test_acc_per_epoch, _ = test(model, loss_funct, test_data_loader, device = device, log_file = log_file)

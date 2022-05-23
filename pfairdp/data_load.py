@@ -67,78 +67,11 @@ def preprocess_adult_paper_based():
             df_to_binary_label_dataset(validation_data, protected_attributes_list = ['sex'], target_attribute = 'income-per-year'),
             df_to_binary_label_dataset(adult_data_test, protected_attributes_list = ['sex'], target_attribute = 'income-per-year'))
 
-# Preprocessing similar to AIF360 
-def preprocess_adult_aif360_based():
-    (adult_data_train, adult_data_test) = load_adult()
-
-    def preprocess_df(df):
-        df['age (decade)'] = df['age'].apply(lambda x: x//10*10)
-
-        def group_edu(x):
-            if x <= 5:
-                return 5
-            elif x >= 13:
-                return 13
-            else:
-                return x
-
-        def age_cut(x):
-            if x >= 70:
-                return 70
-            else:
-                return x
-
-        def group_race(x):
-            if x == "White":
-                return 1.0
-            else:
-                return 0.0
-
-        # Limit education range
-        df['education years'] = df['education-num'].apply(lambda x : group_edu(x))
-        df['education years'] = df['education years'].astype('category')
-
-        # Limit age range
-        df['age (decade)'] = df['age (decade)'].apply(lambda x : age_cut(x))
-
-        # Transform all that is non-white into 'minority'
-        df['race'] = df['race'].apply(lambda x: group_race(x))
-
-        # Replace income with binary variable
-        df['income-per-year'] = df['income-per-year'].replace(to_replace='>50K.', value='>50K', regex=True)
-        df['income-per-year'] = df['income-per-year'].replace(to_replace='<=50K.', value='<=50K', regex=True)
-        df['income-per-year'] = df['income-per-year'].map({'<=50K': 0.0, '>50K': 1.0})
-
-        # Add binary sex variable
-        df['sex'] = df['sex'].map({'Female': 0.0, 'Male': 1.0})
-
-        features = ['age (decade)','education years','race','sex','income-per-year']
-        return df[features]
-
-    preprocessed_train = preprocess_df(adult_data_train)
-    preprocessed_test = preprocess_df(adult_data_test)
-
-    scaler = MinMaxScaler(copy=False)
-
-    train_binary_label_dataset = df_to_binary_label_dataset(preprocessed_train, protected_attributes_list = ['sex'], target_attribute = 'income-per-year')
-    test_binary_label_dataset = df_to_binary_label_dataset(preprocessed_test, protected_attributes_list = ['sex'], target_attribute = 'income-per-year')
-
-    train_binary_label_dataset.features = scaler.fit_transform(train_binary_label_dataset.features)
-    test_binary_label_dataset.features = scaler.fit_transform(test_binary_label_dataset.features)
-
-    ## TODO: Print train_binary_label_dataset.features and targets?
-    return (train_binary_label_dataset, test_binary_label_dataset)
-
-from utils import write_dataset_to_file, write_to_log_file
+from utils import write_dataset_to_file
 
 def load_ADULT_from_AIF(should_scale = True, validation = False, log_file = None, use_all_features = True):
-    ## TODO: Check this, because I am now using all the features
     all_features_in_adult = ['age', 'workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
-    prev_features_used = ['age', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
 
-    ###################################################################################
-    ### For some reason using one hot encoding signficantly affects the performance ###
-    ###################################################################################
     if use_all_features:
         ad = AdultDataset(protected_attribute_names=['sex'],
         privileged_classes = [['Male']],
@@ -150,12 +83,6 @@ def load_ADULT_from_AIF(should_scale = True, validation = False, log_file = None
         ad = AdultDataset(protected_attribute_names=['sex'],
         privileged_classes=[['Male']], categorical_features=[],
         features_to_keep=['age', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week'])
-
-    # write_dataset_to_file(ad.convert_to_dataframe()[0], '/home/bf319/new-Pareto/ParetoFronts/adult_all_features.csv')
-
-    # ad = AdultDataset(protected_attribute_names=['sex'],
-    # privileged_classes=[['Male']], categorical_features=[],
-    # features_to_keep=['age', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week'])
 
     if validation:
         train_binary_label_dataset, valid_test_binary_label_dataset = ad.split([0.533], shuffle=True)
@@ -179,44 +106,16 @@ def load_ADULT_from_AIF(should_scale = True, validation = False, log_file = None
         
         return (train_binary_label_dataset, test_binary_label_dataset)
 
-def get_full_adult_dataset():
-    all_features_in_adult = ['age', 'workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
-
-    ad = AdultDataset(protected_attribute_names=['sex'],
-        privileged_classes = [['Male']],
-        categorical_features=['workclass', 'education',
-                            'marital-status', 'occupation', 'relationship',
-                            'native-country', 'race'],
-        features_to_keep = all_features_in_adult)
-
-    scaler = MinMaxScaler(copy=False)
-
-    ad.features = scaler.fit_transform(ad.features)
-    return ad
-
 from aif360.datasets import BinaryLabelDataset
 
 def df_to_binary_label_dataset(df, protected_attributes_list, target_attribute):
     return BinaryLabelDataset(
         favorable_label = 1.0,
         unfavorable_label = 0.0,
-        ## Below args for StructuredDataset
         df = df,
-        # feature_names = list(df.columns).remove(target_attribute),
         label_names = [target_attribute],
         protected_attribute_names = protected_attributes_list,
     )
-
-from aif360.datasets import CompasDataset, GermanDataset
-
-def load_compas():
-    cd = CompasDataset()
-
-    write_dataset_to_file(cd.convert_to_dataframe()[0], '/home/bf319/new_experiments_Pareto/compass_full.csv')
-
-    (cd_train, cd_test) = cd.split([0.8], shuffle = False)
-
-    return (cd_train, cd_test)
 
 def load_meps():
     meps = MEPSDataset21(categorical_features = [])
