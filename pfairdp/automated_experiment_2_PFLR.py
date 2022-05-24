@@ -13,7 +13,7 @@ device = get_device()
 
 # Create files for storing results
 current_time = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-experiment_dir = "/home/bf319/dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/automated_experiment_2_" + current_time + '/PFLR/'
+experiment_dir = "dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/automated_experiment_2_" + current_time + '/PFLR/'
 
 log_file_path = experiment_dir + 'log.txt'
 final_results_path = experiment_dir + 'results.csv'

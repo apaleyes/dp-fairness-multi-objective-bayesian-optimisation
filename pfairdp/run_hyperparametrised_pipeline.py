@@ -16,7 +16,7 @@ def main():
 
     # Create files for storing results
     current_time = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-    experiment_dir = "/home/bf319/dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/main_experiments_" + current_time + '/'
+    experiment_dir = "dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/main_experiments_" + current_time + '/'
 
     log_file_path = experiment_dir + 'config2_log.txt'
     final_results_path = experiment_dir + 'results_config2_ADULT.csv'

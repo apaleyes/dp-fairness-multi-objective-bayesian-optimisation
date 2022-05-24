@@ -1,5 +1,4 @@
 import csv
-import pandas as pd
 import torch
 import torch.utils.data as data_utils
 

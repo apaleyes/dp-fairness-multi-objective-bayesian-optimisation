@@ -1,13 +1,12 @@
 import numpy as np
 
-from opacus import PrivacyEngine
+from fairness_module.fairness_preprocessing import fairness_preprocessing_dir, no_preprocessing
+from fairness_module.fairness_postprocessing import reject_option_classification
+from fairness_module.fairness_metrics import measure_risk_difference
+from training_module.trainer import train, test
+from DP_module.enforce_DP import make_private
 
-from trainer import train, test
 from utils import to_data_loader, write_to_log_file, get_device, get_data_loader_from_binary_label_dataset
-
-from fairness_preprocessing import fairness_preprocessing_dir, no_preprocessing
-from fairness_postprocessing import reject_option_classification
-from fairness_metrics import measure_risk_difference
 
 from sklearn.metrics import accuracy_score
 
@@ -22,8 +21,11 @@ def run_pipeline(
             batch_size,
             log_file,
             device = get_device()):
-            
-    # Implementation of the fairness module
+    
+    ###########################
+    # Use the fairness module #
+    ###########################
+
     if not bool(fairness_preprocessing_params):
         write_to_log_file(log_file, '\n*** No fairness preprocessing ***\n')
         (X_tr, X_te, y_tr, y_te, preprocessed_train_binary_label_dataset, preprocessed_test_binary_label_dataset) = no_preprocessing(sensitive_attribute, train_binary_label_dataset, test_binary_label_dataset)
@@ -40,39 +42,14 @@ def run_pipeline(
 
     (train_data_loader, test_data_loader) = to_data_loader(X_tr, X_te, y_tr, y_te, batch_size)
 
-    # Implementation of the DP module
-    privacy_engine = PrivacyEngine(accountant = 'gdp')
-    if not bool(dp_params):
-      write_to_log_file(log_file, '\n*** DP disabeld ***\n')
-    else:
-      write_to_log_file(log_file, 'Instantiating the privacy engine \n')
-      if not "target_epsilon" in dp_params:
-        # Main execution mode -- Privacy budget depending on the value of the two hyperparameters
-        model, optimizer, train_data_loader = privacy_engine.make_private(
-            module = model,
-            optimizer = optimizer,
-            data_loader = train_data_loader,
-            noise_multiplier = dp_params['noise_multiplier'],
-            max_grad_norm = dp_params['max_grad_norm']
-        )
-      else:
-        # Run pipeline with predefined privacy constraints
-        eps = dp_params['target_epsilon']
-        delta = dp_params['target_delta']
-
-        write_to_log_file(log_file, f'***** Privacy Engine instantiated for specific privacy budget eps = {eps} and delta = {delta} *****')
-        model, optimizer, train_data_loader = privacy_engine.make_private_with_epsilon(
-            module = model,
-            optimizer = optimizer,
-            data_loader = train_data_loader,
-            target_epsilon = dp_params['target_epsilon'],
-            target_delta = dp_params['target_delta'],
-            epochs = dp_params['epochs'],
-            max_grad_norm = dp_params['max_grad_norm'],
-            noise_multiplier = dp_params['noise_multiplier']
-        )
-
-    # Implementation of the training module
+    #####################
+    # Use the DP module #
+    #####################
+    (model, optimizer, train_data_loader, privacy_engine) = make_private(model, optimizer, train_data_loader, dp_params)
+    
+    ###########################
+    # Use the training module #
+    ###########################
     for epoch in range(1, acc_params['number_of_epochs'] + 1):
         train(model, loss_funct, train_data_loader, optimizer, epoch, verbose = True, device = device, log_file = log_file)
         test_loss_per_epoch, test_acc_per_epoch, _ = test(model, loss_funct, test_data_loader, device = device, log_file = log_file)

@@ -1,6 +1,14 @@
 import torch
 
-from utils import get_device
+def get_device():
+    if torch.cuda.is_available():  
+        dev = "cuda" 
+    else:  
+        dev = "cpu"  
+
+    device = torch.device(dev)
+
+    return device
 
 def train(model, loss_funct, train_loader, optimizer, epoch, verbose = False, device = get_device(), log_file = None):
     model.train()

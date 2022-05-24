@@ -1,7 +1,4 @@
-import numpy as np
-from aif360.algorithms.preprocessing import DisparateImpactRemover
-from aif360.metrics import BinaryLabelDatasetMetric
-from aif360.algorithms.postprocessing import RejectOptionClassification, EqOddsPostprocessing, CalibratedEqOddsPostprocessing
+from aif360.algorithms.postprocessing import RejectOptionClassification
 
 def reject_option_classification(privileged_groups, unprivileged_groups, 
         train_bl_dataset_true, 

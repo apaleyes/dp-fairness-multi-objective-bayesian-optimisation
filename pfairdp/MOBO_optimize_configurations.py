@@ -31,7 +31,7 @@ tkwargs = {
 }
 
 current_time = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-experiment_dir = "/home/bf319/dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/MOBO_" + current_time + '/'
+experiment_dir = "dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/MOBO_" + current_time + '/'
 if not os.path.exists(experiment_dir):
     os.makedirs(experiment_dir, exist_ok = True)
 log_file = open(experiment_dir + 'log.txt', "a")
@@ -185,7 +185,7 @@ def main():
 
     # BoTorch assumes a maximization of all objectives (https://botorch.org/tutorials/multi_objective_bo)
     manual_problem_bounds = torch.FloatTensor([
-                                           [20, 2.0, 10**(-3), 0.1, 0, 16],  # Lower bounds 
+                                           [30, 1.0, 10**(-3), 0.1, 0, 16],  # Lower bounds 
                                            [128.0, 5.0, 10**(-1), 2, 1, 64]   # Upper bounds
                                            ]).to(**tkwargs)
     '''

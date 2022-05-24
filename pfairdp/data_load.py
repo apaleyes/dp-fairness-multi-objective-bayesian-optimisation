@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 
 # AIF360 imports
 from aif360.datasets import AdultDataset, MEPSDataset21
@@ -22,7 +23,6 @@ def load_adult():
 
     return (adult_data_train, adult_data_test)
 
-from sklearn.model_selection import train_test_split
 
 # Preprocessing based on the https://arxiv.org/pdf/2102.05975.pdf paper
 def preprocess_adult_paper_based():
@@ -66,8 +66,6 @@ def preprocess_adult_paper_based():
     return (df_to_binary_label_dataset(training_data, protected_attributes_list = ['sex'], target_attribute = 'income-per-year'),
             df_to_binary_label_dataset(validation_data, protected_attributes_list = ['sex'], target_attribute = 'income-per-year'),
             df_to_binary_label_dataset(adult_data_test, protected_attributes_list = ['sex'], target_attribute = 'income-per-year'))
-
-from utils import write_dataset_to_file
 
 def load_ADULT_from_AIF(should_scale = True, validation = False, log_file = None, use_all_features = True):
     all_features_in_adult = ['age', 'workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
@@ -126,7 +124,5 @@ def load_meps():
 
     meps_train.features = scaler.fit_transform(meps_train.features)
     meps_test.features = scaler.transform(meps_test.features)
-
-    write_dataset_to_file(meps.convert_to_dataframe()[0], '/home/bf319/new_experiments_Pareto/meps.csv')
 
     return (meps_train, meps_test)
