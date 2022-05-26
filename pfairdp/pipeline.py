@@ -6,7 +6,7 @@ from fairness_module.fairness_metrics import measure_risk_difference
 from training_module.trainer import train, test
 from DP_module.enforce_DP import make_private
 
-from utils import to_data_loader, write_to_log_file, get_device, get_data_loader_from_binary_label_dataset
+from utils import to_data_loader, write_to_log_file, get_device, get_data_loader_from_binary_label_dataset, log_exception
 
 from sklearn.metrics import accuracy_score
 
@@ -51,10 +51,15 @@ def run_pipeline(
     # Use the training module #
     ###########################
     for epoch in range(1, acc_params['number_of_epochs'] + 1):
-        train(model, loss_funct, train_data_loader, optimizer, epoch, verbose = True, device = device, log_file = log_file)
-        test_loss_per_epoch, test_acc_per_epoch, _ = test(model, loss_funct, test_data_loader, device = device, log_file = log_file)
+        try:
+            train(model, loss_funct, train_data_loader, optimizer, epoch, verbose = True, device = device, log_file = log_file)
+            test_loss_per_epoch, test_acc_per_epoch, _ = test(model, loss_funct, test_data_loader, device = device, log_file = log_file)
         
-        write_to_log_file(log_file, 'Epoch {} Test set: Average loss: {:.4f}, Accuracy: {:.2f}%\n'.format(epoch, test_loss_per_epoch, 100. * test_acc_per_epoch))
+            write_to_log_file(log_file, 'Epoch {} Test set: Average loss: {:.4f}, Accuracy: {:.2f}%\n'.format(epoch, test_loss_per_epoch, 100. * test_acc_per_epoch))
+        except Exception as e:
+            log_exception(log_file, e)
+
+            return ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A')  
 
     # Evaluate the trained model
     _, acc, final_predictions, test_probs = test(model, loss_funct, test_data_loader, device = device, log_file = log_file, return_probs = True)
