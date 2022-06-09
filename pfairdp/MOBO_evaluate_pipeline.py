@@ -88,12 +88,6 @@ def evaluate_at_params(params, log_file):
                                             log_file =  log_file
                                             )
 
-    log_file.write(f'\nAccuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
-    log_file.write(f'Accuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
-    log_file.write(f'Accuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
-    log_file.write('\n\n')
-    log_file.flush()
-
     # We add a small error to these results so that the inverse of the MOBO transformations does not fail
     if fairness_metric_after_test == 0:
         fairness_metric_after_test = 0.0001

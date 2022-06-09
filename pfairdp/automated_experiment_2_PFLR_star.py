@@ -50,7 +50,6 @@ def main():
     unprivileged_groups = [{'sex': 0.0}]
     target_attribute = 'income-per-year'
 
-    # for noise_multiplier in [8.5, 1.25, 0.502]:
     for noise_multiplier in [9, 1.27, 0.51]:
         for i in range(20):
             params_iteration = {}

@@ -98,7 +98,7 @@ def run_pipeline(
         default_ROC_ub = 0.05
         default_ROC_lb = -0.05
 
-        # We do not use the default bounds for the second automated experiment
+        # We use custom bounds for the PFLR* replication in order to get similar risk difference values
         if 'custom_ub' in fairness_postprocessing_params:
             default_ROC_ub = fairness_postprocessing_params['custom_ub']
 
