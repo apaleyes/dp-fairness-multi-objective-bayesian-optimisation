@@ -11,7 +11,7 @@ from botorch.models.model_list_gp_regression import ModelListGP
 from botorch.optim.optimize import optimize_acqf
 from botorch.utils.multi_objective.box_decompositions.non_dominated import  FastNondominatedPartitioning
 from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
-from botorch.sampling.samplers import SobolQMCNormalSampler
+from botorch.sampling.normal import SobolQMCNormalSampler
 from botorch.exceptions import BadInitialCandidatesWarning
 from botorch.utils.multi_objective.box_decompositions.dominated import DominatedPartitioning
 from datetime import datetime
