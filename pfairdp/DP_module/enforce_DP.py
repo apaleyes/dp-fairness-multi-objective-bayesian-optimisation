@@ -7,7 +7,7 @@ def make_private(model, optimizer, train_data_loader, dp_params):
     else:
       print('Instantiating the privacy engine \n')
       if not "target_epsilon" in dp_params:
-        # Main execution mode -- Privacy budget depending on the value of the two hyperparameters
+        # Main execution mode -- Privacy budget depends on the value of the two hyperparameters
         model, optimizer, train_data_loader = privacy_engine.make_private(
             module = model,
             optimizer = optimizer,

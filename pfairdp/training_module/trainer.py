@@ -65,6 +65,7 @@ def test(model, loss_funct, test_loader, device = get_device(), log_file = None,
         test_loss, correct, test_size,
         100. * accuracy))
     
+    # Optionally return the probabilities as these are used by some of the bias mitigation algorithms (e.g. ROC postprocessing)
     if return_probs:
         return test_loss, accuracy, predictions, prediction_prob
     else:

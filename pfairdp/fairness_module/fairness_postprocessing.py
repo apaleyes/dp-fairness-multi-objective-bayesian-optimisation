@@ -4,8 +4,8 @@ def reject_option_classification(privileged_groups, unprivileged_groups,
         train_bl_dataset_true, 
         train_bl_dataset_predicted,
         test_bl_dataset_predicted,
-        custom_ub = 0.05,
-        custom_lb = -0.05
+        custom_ub = 0.05,   # This is the default upper bound used by ROC
+        custom_lb = -0.05   # This is the default lower bound used by ROC
         ):
 
     ROC = RejectOptionClassification(
