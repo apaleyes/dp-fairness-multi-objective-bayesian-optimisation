@@ -2,13 +2,13 @@ import math
 import torch
 
 from botorch.utils.sampling import draw_sobol_samples
-from utils import append_row_to_csv
+from utils import append_row_to_csv, get_device
 
 from MOBO_evaluate_pipeline import evaluate_at_params, revert_privacy_value, revert_fairness_value, revert_accuracy_value
 
 tkwargs = {
     "dtype": torch.double,
-    "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+    "device": get_device(),
 }
 
 def generate_initial_data(manual_problem_bounds, n = 6, log_file = None, final_results_path = None):
@@ -19,7 +19,7 @@ def generate_initial_data(manual_problem_bounds, n = 6, log_file = None, final_r
 
     train_obj_true = []
 
-    for i, x in enumerate(train_x.cpu().numpy()):
+    for i, x in enumerate(train_x.detach().cpu().numpy()):
         num_epochs = x[0]
         noise_multiplier = x[1]
         learning_rate = x[2]

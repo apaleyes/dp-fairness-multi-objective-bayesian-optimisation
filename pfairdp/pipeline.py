@@ -30,7 +30,7 @@ def run_pipeline(
         write_to_log_file(log_file, '\n*** No fairness preprocessing ***\n')
         (X_tr, X_te, y_tr, y_te, preprocessed_train_binary_label_dataset, preprocessed_test_binary_label_dataset) = no_preprocessing(sensitive_attribute, train_binary_label_dataset, test_binary_label_dataset)
     else:
-        write_to_log_file(log_file, '\n*** Preprocessing the datasets ***\n')
+        write_to_log_file(log_file, '\n*** Fariness preprocessing ***\n')
         (X_tr, X_te, y_tr, y_te, preprocessed_train_binary_label_dataset, preprocessed_test_binary_label_dataset) = fairness_preprocessing_dir(sensitive_attribute, fairness_preprocessing_params, train_binary_label_dataset, test_binary_label_dataset)
 
     ##############################################################################################################################
@@ -45,11 +45,13 @@ def run_pipeline(
     #####################
     # Use the DP module #
     #####################
+    write_to_log_file(log_file, '\n*** Privatising ***\n')
     (model, optimizer, train_data_loader, privacy_engine) = make_private(model, optimizer, train_data_loader, dp_params)
     
     ###########################
     # Use the training module #
     ###########################
+    write_to_log_file(log_file, '\n*** Start training ***\n')
     for epoch in range(1, acc_params['number_of_epochs'] + 1):
         try:
             train(model, loss_funct, train_data_loader, optimizer, epoch, verbose = True, device = device, log_file = log_file)
@@ -59,10 +61,12 @@ def run_pipeline(
         except Exception as e:
             log_exception(log_file, e)
 
-            return ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A')  
+            return ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A')
+    write_to_log_file(log_file, '\n*** Training completed ***\n')
 
     # Evaluate the trained model
-    _, acc, final_predictions, test_probs = test(model, loss_funct, test_data_loader, device = device, log_file = log_file, return_probs = True)
+    loss, acc, final_predictions, test_probs = test(model, loss_funct, test_data_loader, device = device, log_file = log_file, return_probs = True)
+    write_to_log_file(log_file, 'Final performance: Average loss: {:.4f}, Accuracy: {:.2f}%\n'.format(loss, 100. * acc))
 
     # Update the test dataset with the model's predictions in order to measure the final fairness metric
     # and potentially postprocess the dataset
@@ -78,6 +82,7 @@ def run_pipeline(
 
     # If postprocessing is enabled
     if bool(fairness_postprocessing_params):
+        write_to_log_file(log_file, '\n*** Fairness postprocessing ***\n')
         valid_binary_label_dataset = fairness_postprocessing_params['valid_binary_label_dataset']
 
         if bool(fairness_preprocessing_params):

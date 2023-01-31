@@ -1,7 +1,7 @@
 import torch
 import math
 
-from utils import get_device
+from utils import get_device, write_to_log_file
 from data_load import load_ADULT_from_AIF, load_meps
 from pipeline import run_pipeline
 from models import SNNMedium, SNNSmall
@@ -44,6 +44,7 @@ else:
 device = get_device()
 
 def evaluate_at_params(params, log_file):
+    write_to_log_file(log_file, "Evaluation starting\n")
     acc_params = {}
     acc_params['number_of_epochs'] = params['number_of_epochs']
     acc_params['batch_size'] = params['batch_size']
@@ -88,11 +89,11 @@ def evaluate_at_params(params, log_file):
                                             log_file =  log_file
                                             )
 
-    log_file.write(f'\nAccuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
-    log_file.write(f'Accuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
-    log_file.write(f'Accuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
-    log_file.write('\n\n')
-    log_file.flush()
+    write_to_log_file(log_file, "Evaluation completed\n")
+    write_to_log_file(log_file, f'\nAccuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
+    write_to_log_file(log_file, f'Accuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
+    write_to_log_file(log_file, f'Accuracy {acc} | Fairness {fairness_metric_after_test} | Privacy budget {privacy_budget}\n')
+    write_to_log_file(log_file, '\n\n')
 
     # We add a small error to these results so that the inverse of the MOBO transformations does not fail
     if fairness_metric_after_test == 0:

@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Imports from workspace
 from hyperparameter_mesh import generate_grid_hyperparameters_instances, generate_random_hyperparameter_instances
-from utils import append_row_to_csv, get_device, convert_acc_for_csv, log_configuration, write_dataset_to_file
+from utils import append_row_to_csv, get_device, convert_acc_for_csv, log_configuration, log_exception, write_dataset_to_file, write_to_log_file
 from data_load import load_ADULT_from_AIF, load_meps
 from pipeline import run_pipeline
 from models import SNNSmall, SNNMedium
@@ -16,7 +16,7 @@ def main():
 
     # Create files for storing results
     current_time = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-    experiment_dir = "dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/main_experiments_" + current_time + '/'
+    experiment_dir = "~/dp-fairness-multi-objective-bayesian-optimisation/final_experiments_Pareto/main_experiments_" + current_time + '/'
 
     log_file_path = experiment_dir + 'config2_log.txt'
     final_results_path = experiment_dir + 'results_config2_ADULT.csv'
@@ -63,8 +63,8 @@ def main():
 
     ## Sampling params
 
-    run_random_search = True
-    run_grid_search = False
+    run_random_search = False
+    run_grid_search = True
 
     if run_random_search:
         num_instances = 300
@@ -80,6 +80,9 @@ def main():
         hyperparam_ranges['repair_level'] = {'type': 'uniform' , 'params': [0, 1]}
 
         search_space = generate_random_hyperparameter_instances(hyperparam_ranges, num_instances = num_instances, num_replications = 1)
+
+        if not os.path.exists(experiment_dir + 'random.md'):
+            os.mknod(experiment_dir + 'random.md')
     elif run_grid_search:
         points_per_param = 4
 
@@ -94,64 +97,78 @@ def main():
         hyperparam_ranges['repair_level'] = {'min': 0 , 'max': 1}
 
         search_space = generate_grid_hyperparameters_instances(hyperparam_ranges, points_per_param = points_per_param, num_replications = 1)
+        if not os.path.exists(experiment_dir + 'grid.md'):
+            os.mknod(experiment_dir + 'grid.md')
 
-    for params_iteration in search_space:
+    try:
+        for i, params_iteration in enumerate(search_space):
+            write_to_log_file(log_file, f"Starting iteration {i}")
 
-        acc_params = {}
-        acc_params['number_of_epochs'] = params_iteration['number_of_epochs']
-        acc_params['batch_size'] = params_iteration['batch_size']
+            acc_params = {}
+            acc_params['number_of_epochs'] = params_iteration['number_of_epochs']
+            acc_params['batch_size'] = params_iteration['batch_size']
 
-        fairness_preproc_params = {}
-        fairness_preproc_params['repair_level'] = params_iteration['repair_level']
+            fairness_preproc_params = {}
+            fairness_preproc_params['repair_level'] = params_iteration['repair_level']
 
-        fairness_postproc_params = {}
+            fairness_postproc_params = {}
 
-        dp_params = {}
-        dp_params['noise_multiplier'] = params_iteration['noise_multiplier']
-        dp_params['max_grad_norm'] = params_iteration['clipping_norm']
+            dp_params = {}
+            dp_params['noise_multiplier'] = params_iteration['noise_multiplier']
+            dp_params['max_grad_norm'] = params_iteration['clipping_norm']
 
-        # Instantiate the model
-        num_features_in_adult = len(train_binary_label_dataset.convert_to_dataframe()[0].drop([target_attribute], axis = 1).columns) - 1
-        if should_load_meps:
-            model = SNNMedium(num_features_in_adult).to(device)
-            optimizer = torch.optim.SGD(model.parameters(), lr = params_iteration['learning_rate'])
-        else:
-            model = SNNSmall(num_features_in_adult).to(device)
-            optimizer = torch.optim.Adam(model.parameters(), lr = params_iteration['learning_rate'])
-        model.train()
+            write_to_log_file(log_file, f"Training parameters: {acc_params}")
+            write_to_log_file(log_file, f"Fairness parameters: {fairness_preproc_params}")
+            write_to_log_file(log_file, f"Privacy parameters: {dp_params}")
 
-        (acc, privacy_budget, 
-        fairness_metric_before_train, fairness_metric_after_train, 
-        fairness_metric_before_test, fairness_metric_after_test) = run_pipeline(model, 
-                                                                                optimizer,
-                                                                                torch.nn.functional.binary_cross_entropy, 
-                                                                                acc_params, fairness_preproc_params, fairness_postproc_params, dp_params,
-                                                                                sensitive_attribute,
-                                                                                train_binary_label_dataset, test_binary_label_dataset,
-                                                                                privileged_groups, unprivileged_groups,
-                                                                                params_iteration['batch_size'],
-                                                                                log_file
-                                                                                )
+            # Instantiate the model
+            num_features_in_adult = len(train_binary_label_dataset.convert_to_dataframe()[0].drop([target_attribute], axis = 1).columns) - 1
+            if should_load_meps:
+                model = SNNMedium(num_features_in_adult).to(device)
+                optimizer = torch.optim.SGD(model.parameters(), lr = params_iteration['learning_rate'])
+            else:
+                model = SNNSmall(num_features_in_adult).to(device)
+                optimizer = torch.optim.Adam(model.parameters(), lr = params_iteration['learning_rate'])
+            model.train()
 
-        log_configuration(log_file, 
-            acc, 
-            privacy_budget, 
+
+
+            (acc, privacy_budget, 
             fairness_metric_before_train, fairness_metric_after_train, 
-            fairness_metric_before_test, fairness_metric_after_test
-            )
+            fairness_metric_before_test, fairness_metric_after_test) = run_pipeline(model, 
+                                                                                    optimizer,
+                                                                                    torch.nn.functional.binary_cross_entropy, 
+                                                                                    acc_params, fairness_preproc_params, fairness_postproc_params, dp_params,
+                                                                                    sensitive_attribute,
+                                                                                    train_binary_label_dataset, test_binary_label_dataset,
+                                                                                    privileged_groups, unprivileged_groups,
+                                                                                    params_iteration['batch_size'],
+                                                                                    log_file
+                                                                                    )
 
-        append_row_to_csv(final_results_path, [
-            str(params_iteration['number_of_epochs']),
-            str(params_iteration['repair_level']),
-            str(params_iteration['batch_size']),
-            str(params_iteration['learning_rate']),
-            str(params_iteration['clipping_norm']),
-            str(params_iteration['noise_multiplier']),
-            convert_acc_for_csv(acc),
-            str(privacy_budget),
-            str(fairness_metric_before_test), 
-            str(fairness_metric_after_test)
-        ])
+            log_configuration(log_file, 
+                acc, 
+                privacy_budget, 
+                fairness_metric_before_train, fairness_metric_after_train, 
+                fairness_metric_before_test, fairness_metric_after_test
+                )
+
+            append_row_to_csv(final_results_path, [
+                str(params_iteration['number_of_epochs']),
+                str(params_iteration['repair_level']),
+                str(params_iteration['batch_size']),
+                str(params_iteration['learning_rate']),
+                str(params_iteration['clipping_norm']),
+                str(params_iteration['noise_multiplier']),
+                convert_acc_for_csv(acc),
+                str(privacy_budget),
+                str(fairness_metric_before_test), 
+                str(fairness_metric_after_test)
+            ])
+    except Exception as e:
+        log_exception(log_file, e)
+    finally:
+        log_file.close()
 
 if __name__ == "__main__":
     main()
