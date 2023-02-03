@@ -2,7 +2,7 @@ import torch
 
 def get_device():
     if torch.cuda.is_available():  
-        dev = "cuda" 
+        dev = "cuda:0" 
     else:  
         dev = "cpu"  
 

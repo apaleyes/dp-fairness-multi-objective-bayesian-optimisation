@@ -1,4 +1,5 @@
 import csv
+import traceback
 import torch
 import torch.utils.data as data_utils
 
@@ -20,7 +21,7 @@ def append_row_to_csv(file_path, values):
 
 def get_device():
     if torch.cuda.is_available():  
-        dev = "cuda" 
+        dev = "cuda:0" 
     else:  
         dev = "cpu"  
 
@@ -48,10 +49,13 @@ def write_to_log_file(log_file_handle, line):
     log_file_handle.flush()
 
 def log_exception(log_file_handle, e):
+    exception_str = traceback.format_exc()
     log_file_handle.write('******************* \n')
     log_file_handle.write('Some error happened \n')
     log_file_handle.write('******************* \n')
     log_file_handle.write(str(e))
+    log_file_handle.write('\n\n')
+    log_file_handle.write(exception_str)
     log_file_handle.write('\n\n\n')
     log_file_handle.flush()
 

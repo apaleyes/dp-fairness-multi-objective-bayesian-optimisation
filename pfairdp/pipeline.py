@@ -55,9 +55,10 @@ def run_pipeline(
     for epoch in range(1, acc_params['number_of_epochs'] + 1):
         try:
             train(model, loss_funct, train_data_loader, optimizer, epoch, verbose = True, device = device, log_file = log_file)
-            test_loss_per_epoch, test_acc_per_epoch, _ = test(model, loss_funct, test_data_loader, device = device, log_file = log_file)
+            # test_loss_per_epoch, test_acc_per_epoch, _ = test(model, loss_funct, test_data_loader, device = device, log_file = log_file)
         
-            write_to_log_file(log_file, 'Epoch {} Test set: Average loss: {:.4f}, Accuracy: {:.2f}%\n'.format(epoch, test_loss_per_epoch, 100. * test_acc_per_epoch))
+            # write_to_log_file(log_file, 'Epoch {} Test set: Average loss: {:.4f}, Accuracy: {:.2f}%\n'.format(epoch, test_loss_per_epoch, 100. * test_acc_per_epoch))
+            write_to_log_file(log_file, f'Epoch {epoch} done\n')
         except Exception as e:
             log_exception(log_file, e)
 

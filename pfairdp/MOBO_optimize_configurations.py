@@ -161,7 +161,6 @@ def optimize_qehvi_and_get_observation(model, train_x, sampler, manual_problem_b
             str(params['noise_multiplier']),
             str(revert_accuracy_value(acc)),
             str(revert_privacy_value(privacy_budget)),
-            "0",
             str(revert_fairness_value(fairness))
         ])
     
@@ -183,7 +182,6 @@ def main():
         'Noise multiplier', 
         'Accuracy', 
         'Privacy budget',
-        'Fairness before',
         'Fairness after'
         ])
 
@@ -219,36 +217,49 @@ def main():
         
         hvs_qehvi.append(volume)
         
+        max_retries = 3
         iteration = 0
         while iteration < N_BATCH:
             t0 = time.time()
             
-            # Fit the models
-            fit_gpytorch_model(mll_qehvi)
-            
-            # Define the qEHVI acquisition module using a QMC sampler
-            qehvi_sampler = SobolQMCNormalSampler(num_samples=MC_SAMPLES)
-            
-            # Optimize acquisition functions and get new observations
-            new_x_qehvi, new_obj_true_qehvi = optimize_qehvi_and_get_observation(
-                model = model_qehvi, 
-                train_x = train_x_qehvi, 
-                sampler = qehvi_sampler,
-                manual_problem_bounds = manual_problem_bounds, 
-                manual_problem_ref_point = anti_ideal_point, 
-            )
-            
-            # Update training points
-            train_x_qehvi = torch.cat([train_x_qehvi, new_x_qehvi])
-            train_obj_true_qehvi = torch.cat([train_obj_true_qehvi, new_obj_true_qehvi])
-            
-            # Compute hypervolume
-            bd = DominatedPartitioning(ref_point = anti_ideal_point, Y = train_obj_true_qehvi)
-            volume = bd.compute_hypervolume().item()
-            hvs_qehvi.append(volume)
+            retries = 0
+            try:
+                # Fit the models
+                fit_gpytorch_model(mll_qehvi)
+                
+                # Define the qEHVI acquisition module using a QMC sampler
+                qehvi_sampler = SobolQMCNormalSampler(sample_shape=torch.Size([MC_SAMPLES]))
+                
+                # Optimize acquisition functions and get new observations
+                new_x_qehvi, new_obj_true_qehvi = optimize_qehvi_and_get_observation(
+                    model = model_qehvi, 
+                    train_x = train_x_qehvi, 
+                    sampler = qehvi_sampler,
+                    manual_problem_bounds = manual_problem_bounds, 
+                    manual_problem_ref_point = anti_ideal_point, 
+                    log_file=log_file
+                )
+                
+                # Update training points
+                train_x_qehvi = torch.cat([train_x_qehvi, new_x_qehvi])
+                train_obj_true_qehvi = torch.cat([train_obj_true_qehvi, new_obj_true_qehvi])
+                
+                # Compute hypervolume
+                bd = DominatedPartitioning(ref_point = anti_ideal_point, Y = train_obj_true_qehvi)
+                volume = bd.compute_hypervolume().item()
+                hvs_qehvi.append(volume)
 
-            # Reinitialize the models so they are ready for fitting on next iteration
-            mll_qehvi, model_qehvi = initialize_model(train_x_qehvi, train_obj_true_qehvi)
+                # Reinitialize the models so they are ready for fitting on next iteration
+                mll_qehvi, model_qehvi = initialize_model(train_x_qehvi, train_obj_true_qehvi)
+            except Exception as e:
+                log_exception(log_file, e)
+                if retries >= max_retries:
+                    raise
+
+                write_to_log_file("ERROR! Retrying")
+                retries += 1
+                continue
+
             
             t1 = time.time()
             
